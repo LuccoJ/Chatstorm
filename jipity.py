@@ -234,7 +234,7 @@ class Completer:
         'gpt-4': (0.00003, 0.00006),
     }
 
-    def __init__(self, model=main_model, chatter=None, temperature=None, maxtokens=400):
+    def __init__(self, model: str=main_model, chatter: Optional[str]=None, temperature: Optional[float]=None, maxtokens: int=400):
         self.model = model
         self.chatter = chatter
         self.temperature = temperature if temperature else 1.0 if chatter else 0
@@ -317,7 +317,7 @@ class Completer:
 
         return {'tokens': cls.expenses['Total']['tokens'] - cls.spent['tokens'], 'cost': cls.expenses['Total']['cost'] - cls.spent['cost']}
 
-    def bill(self, user, response):
+    def bill(self, user: str, response):
         usage = response['usage']
 
         def updatecosts(entity, name):
@@ -341,7 +341,7 @@ class Completer:
 
 @typechecked
 class Evaluator:
-    def __init__(self, model: str = main_model, notes: Optional[str]=None):
+    def __init__(self, model: str=main_model, notes: Optional[str]=None) -> list[str]:
         self.model = model
         self.trace = []
 
@@ -387,7 +387,7 @@ class Evaluator:
         return result
 
     @cache(128)
-    def assessment(self, message):
+    def assessment(self, message: Message) -> list[str]:
         return self.evaluate(message, {
             'standalone': "is not a statement or a possible reply, but a standalone question or inquiry about general, technical or scientific knowledge, suggesting the absence of any further prior context; if this question or inquiry would be easily followed by 'what?', 'how?', 'what do you mean?', 'what are you referring to?', then it is not standalone",
             'contextual': "either is not a question in the first place, but a statement or reply or answer, or else, it contains pronouns/determiners like 'it', 'that', 'this', 'those', 'these', 'them' or 'then', 'so', or other indications of prior context; it may be referencing a conversation, says 'yes' or 'no' or 'but' or 'and yet' or 'not really' or another word typical of replies; alternatively, it would be likely to be responded by the likes of 'what?', 'how?', 'why?', indicating a need for further information",
@@ -404,14 +404,14 @@ class Evaluator:
         ])
 
     @cache(128)
-    def understanding(self, message):
+    def understanding(self, message: Message) -> list[str]:
         return self.evaluate(message, {
             'clueless': "indicates a lack of context or being unclear what or who is being discussed, or asks for more context",
             'informed': "appears to have all the needed context",
         })
 
     @cache(128)
-    def quirks(self, message):
+    def quirks(self, message: Message) -> list[str]:
         return self.evaluate(message, {
             'disclaimer': "contains a legal-sounding disclaimer (like that it cannot provide medical advice)",
             'ethics': "seems to be refusing to do or say something based on ethics concerns",
@@ -438,7 +438,7 @@ class Evaluator:
         ])
 
     @cache(128)
-    def factuality(self, message):
+    def factuality(self, message: Message) -> list[str]:
         return self.evaluate(message, {
             'true': "refers to events from before September 2021, and is true and accurately stated",
             'future': "describes details of events after September 2021 as facts, which cannot be inferred with certainty with 2021 knowledge",
@@ -457,7 +457,7 @@ class Evaluator:
        })
 
     @cache(128)
-    def difficulty(self, message):
+    def difficulty(self, message: Message) -> list[str]:
         return self.evaluate(message, {
             'straightforward': "states things that are well-known and easy to remember and understand, and doesn't include specialized topics like mathematics or science except possibly for well-known notional facts about them",
             'technical': "states things that are obscure, mathematical, scientific, medical, or complex, highly technical, or very specific",
@@ -467,7 +467,7 @@ class Evaluator:
         })
 
     @cache(128)
-    def consistency(self, message1, message2):
+    def consistency(self, message1: Message, message2: Message) -> list[str]:
         return self.evaluate(Message(message1.user, f"Version 1: {message1.content}\n\nVersion 2: {message2.content}"), {
             'match': "states roughly the same facts and data in Version 1 as in Version 2, and without any contradiction",
             'mismatch': "states contradictory facts or data in Version 1 vs Version 2 (mismatch)",
@@ -476,14 +476,14 @@ class Evaluator:
         })
 
     @cache(128)
-    def ignorability(self, message, nickname):
+    def ignorability(self, message: Message, nickname: str) -> list[str]:
         return self.evaluate(message, {
              'directed': f"is a direct question or request to {nickname} that is expected to be answered or replied to by {nickname}",
              'ignorable': f"is not directed to {nickname}, or it is but it doesn't necessarily require a response",
         })
 
     @cache(128)
-    def misdirection(self, message):
+    def misdirection(self, message: Message) -> list[str]:
         return self.evaluate(message, {
             'infobot': f"is addressing someone called literally Infobot",
             'other': f"is not talking to someone named literally Infobot",
@@ -494,7 +494,7 @@ class Evaluator:
         ])
 
     @cache(128)
-    def thoroughness(self, message):
+    def thoroughness(self, message: Message) -> list[str]:
         return self.evaluate(message, {
             'thorough': "looks like, perhaps after an internet search, a specific conclusion has been reached",
             'lazy': "looks like an internet lookup has been done but a question has not been completely answered and this message is just offering further researches or suggests more commands to run",
@@ -503,7 +503,7 @@ class Evaluator:
 
 @typechecked
 class Transformer:
-    def __init__(self, model=main_model, temperature=0):
+    def __init__(self, model: str=main_model, temperature: float=0.0):
         self.model = model
         self.temperature = temperature
 
@@ -511,7 +511,7 @@ class Transformer:
     # This is used for a few things, but mainly to post-hoc correct acceptable, but sub-par (too long, full of apologies, etc)
     # responses by the bot.
 
-    def filter(self, message: Message, instructions, attempts=1, reason="filtered", success=lambda response: True) -> Message:
+    def filter(self, message: Message, instructions: str, attempts: int=1, reason: str="filtered", success=lambda response: True) -> Message:
         # We specify to rewrite it as-is because in one case it wrote that there was nothing to remove, instead of just restating it.
         instructions = instructions.strip(".:")
         messages = [
@@ -542,16 +542,16 @@ class Transformer:
     def dontpush(self, message: Message):
         return self.filter(message, f"Repeat this message unchanged, but if it ends with a reminder that assistance is available on request, or with asking how to assist, or to continue chatting, then remove that part", reason="nonpushy")
 
-    def shorten(self, message: Message, length=400):
+    def shorten(self, message: Message, length: int=400):
         return self.filter(message, f"Edit this message to be {length*0.9:.0f}-{length} characters long (or less if not possible), while keeping the same pronouns and user nicknames: it must still look like a plausible chat message, not a summary; don't include greetings unless they are in the original", attempts=3, success=lambda response: len(response) <= length, reason="shortened")
 
-    def summarize(self, message: Message, length=None):
+    def summarize(self, message: Message, length: Optional[int]=None):
         fuzzylength = "as briefly as possible" if not length else f"in {length*0.9:.0f}-{length} characters"
 
         #return self.filter(message, f"Summarize this text {fuzzylength}, including all stated facts if possible, keep it in the same register, and list any contained URLs if they fit under a heading 'URLs:'", attempts=2, success=lambda response: len(response) <= length)
         return self.filter(message, f"Summarize this text {fuzzylength}, including all data and facts (don't privilege the ones stated first, give equal footing to things in the middle and at the end) and contained URLs, if any fit, under a heading, 'URLs:'", attempts=2, success=lambda response: not length or (len(response.content) <= length and len(response.content) > len(message.content)*0.2), reason="summarized")
 
-    def abridge(self, message: Message, temperature=0.5, length=400):
+    def abridge(self, message: Message, temperature: float=0.5, length: int=400):
         return self.filter(message, f"The following is automated speech recognition transcription of a spoken message. Make it sound more written text in the tone of an internet post, removing any redundancy and out-of-order thoughts stemming from spoken language (also insert newlines in appropriate places to avoid any individual paragraph exceeding {length} characters)", reason="abridged")
 
 
@@ -584,7 +584,7 @@ class ChatHistory(Sequence):
 
         return full
 
-    def enumerate(self, chapter):
+    def enumerate(self, chapter: str):
         for index, message in enumerate(self.book[chapter]):
             message.edit(f"{index}: {message.content}", reason="enumerated")
 
@@ -595,12 +595,12 @@ class ChatHistory(Sequence):
         for chapter in chapters:
             self.select(chapter)
 
-    def select(self, chapter, clear=False):
+    def select(self, chapter: str, clear: bool=False):
         LOGGER.info(f"Selected chapter {chapter}, clearing: {clear}")
         self.active = chapter
         self.book[self.active] = self.book.get(self.active, []) if not clear else []
 
-    def log(self, messages):
+    def log(self, messages: Sequence[Message]):
         self.logs['logs'] += messages
 
     def add(self, message: Message):
@@ -645,7 +645,7 @@ class ChatHistory(Sequence):
         result = (self.book.get('preamble', []) if preamble else []) + [item] + (final if after else [])
         return result[0] if len(result) == 1 else result
 
-    def prune(self, chapter=None):
+    def prune(self, chapter: Optional[str]=None):
         LOGGER.debug(f"Pruning history, currently {len(self.full)}")
 
         chapter = chapter or self.active
@@ -719,8 +719,6 @@ State on separate lines:
         if archived:
             self.log(archived)
 
-            print(f"Previous summary: {self.book['summary'][1]}")
-
             messages = [Message('system', "Given the following chat, take note of things most likely to need remembering " \
                        "(facts and events, personality traits, important conversations, arguments and debates, preferences, " \
                        "opinions, beliefs, interest, hobbies, friends, enemies, gender, etc)...\n\n")]
@@ -735,6 +733,8 @@ State on separate lines:
                         "If you can condense summary and/or notes by combining related parts and making them shorter without losing information, do so.\n\n")]
             messages += [Message('system', "Summary and notes start here:")]
             messages += [self.book['summary'][1] if len(self.book['summary']) > 1 else Message('assistant', "Chat summary:\nempty\n\nNotes about people:\nempty")]
+
+            if len(self.book['summary']) > 1: LOGGER.debug(f"Previous summary: {self.book['summary'][1]}")
 
             summary, tokens = Completer().respond(messages)
 
@@ -779,7 +779,7 @@ State on separate lines:
 class ChatBot:
     wordlist = mnemonic.Mnemonic("english")
 
-    def __init__(self, nickname="Brainstorm", channel="#nowhere", network="GPTChat", owner: str=None, model=main_model, stream=True, prompt=None, msglen=400):
+    def __init__(self, nickname: str="Brainstorm", channel: str="#nowhere", network: str="GPTChat", owner: str=None, model: str=main_model, stream: bool=True, prompt: Optional[str]=None, msglen: int=400):
         self.commands = {'gpt': self.gptworker, 'searchtext': self.search_text, 'searchnews': self.search_news, 'wp': self.wikipedia, 'wpsection': self.wikipedia, 'wa': self.wolframalpha, 'note': self.notetoself, 'logs': self.logs, 'news': self.newspaper, 'url': self.readability, 'pass': self.noop}
         self.nickname = nickname
         self.network = network
@@ -1785,7 +1785,8 @@ def setup(bot):
 
                 chatbots[channel].finetune()
                 chatbots[channel].receive('Infobot', "You are now connected. Users currently in the channel: " + " ".join(user for user in bot.channels[channel].users))
-                #chatbots[channel].history.printout()
+                print(f"\n\n\nHISTORY FOR {channel}:\n\n")
+                chatbots[channel].history.printout()
 
                 populated = True
 
