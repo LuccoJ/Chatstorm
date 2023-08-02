@@ -867,7 +867,7 @@ Do not include <{nick}> in your messages. Just respond, unless you want to speak
 
 Available commands all start with {pfx} and end with a linefeed. You alone can invoke them directly, and they are:
 
-{pfx}gpt <instructions> (instruct GPT to perform actions, like a web search followed by summarizing the best result, and report a result)
+{pfx}gpt <request> (instruct GPT to perform actions, like a web search followed by summarizing the best result, and report a final summary; do NOT explain things, ONLY state your request)
 {pfx}wa <query> (return WolframAlpha results for the query; handiest for things that WolframAlpha knows; must phrase query so WolframAlpha will accept it)
 {pfx}searchtext <keywords> (run DuckDuckGo search for keywords and return found titles and URLs; hint: 'site:' is supported)
 {pfx}searchnews <keywords> (run DuckDuckGo search on news articles and return found titles and URLs; hint: 'site:' is supported)
