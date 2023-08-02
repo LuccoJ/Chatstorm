@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "brainsopel"
+version = "0.1.0"
+description = ""
+authors = ["LjL"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+sopel = "^7.1.9"
+openai = "^0.27.4"
+tiktoken = "^0.4.0"
+mnemonic = {extras = ["english"], version = "^0.20"}
+wikipedia-sections = "^2.0.0"
+scholarly = "^1.7.11"
+wolframalpha = "^5.0.0"
+newspaper3k = "^0.2.8"
+readability-lxml = "^0.8.1"
+duckduckgo-search = "^3.8.4"
+faster-whisper = "^0.7.1"
+search-engines = "^1.0.7"
+llama-cpp-python = {git = "https://github.com/abetlen/llama-cpp-python.git"}
+wrapt = "^1.15.0"
+mypy = "^1.4.1"
+typeguard = "^4.1.0"
+types-requests = "^2.31.0.2"
+
+[tool.poetry.group.dev.dependencies]
+pylint = "^2.17.4"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
