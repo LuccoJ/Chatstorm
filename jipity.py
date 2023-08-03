@@ -1064,7 +1064,7 @@ Speak in the first person.
         self.history.write(user, prompt, (timestamp or datetime.datetime.now()))
 
     def reply(self, recursion=0, strict=True, flush=False):
-        if recursion > 3: raise RuntimeError("Bot is causing too much recursion")
+        if recursion > 4: raise RuntimeError("Bot is causing too much recursion")
 
         self.used = True
 
