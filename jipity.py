@@ -449,6 +449,7 @@ class Evaluator:
             'internet': "explicitly states to have sourced its claims from internet or web (example: 'After a web search, I can confirm she's 64 years old')",
             'sourced': "explicitly states to have sources its claims from specific sources (example: 'Based on a study by Smith et al from 2004, this was found unhelpful')",
             'comment': "while it seems to discuss news or facts, it is not making the claim the news or facts are true, but merely commenting on their merit",
+            'lying': "claims to have used a command to obtain information, or to have information from a specific source",
             'chat': "is not about facts, it's just chit-chat",
        }, examples={
             ("After a web search, I can confirm she's 64 years old.", 'internet'),
@@ -844,6 +845,7 @@ You can be helpful in many different ways, but without sounding like an assistan
 You should sound like other human chatters, making them feel at ease, and avoid pushing them with reminders of what you can do for them.
 When helping someone, avoid asking if they want "further" assistance. Otherwise you will annoy them, which is not helpful.
 When asked a question, either provide the answer right away, or use your commands to look it up, or failing that, admit you don't know.
+Never claim to have used a command when you actually haven't, and never claim your information come from a given source if it doesn't.
 Disagree with others bluntly if they're clearly wrong and their opinions clash with your knowledge.
 Have respectful but forceful arguments and stand your ground when you know you're right.
 When you're speculating or uncertain, always specify it.
@@ -1201,8 +1203,9 @@ Speak in the first person.
             # After the bot sends a (candidate, not definitive) message, it gets analyzed and nitpicked about.
             # It has two chances to get it right.
 
-            def whack(text):
-                self.history.write('system', f"{text} (comply, but don't reply or reference this)")
+            def whack(text: str, points: int=-1):
+                self.history.write('system', f"{text} (you lose {abs(point)} points; comply, but don't reply or reference this)")
+                self.score += points
 
             quirks = self.evaluator.quirks(response)
 
@@ -1225,36 +1228,37 @@ Speak in the first person.
 #            if(COMMAND_PREFIX in response and any(command in response for command in self.commands)):
 #                whack("You must use commands yourself, as their own response without including anything else.")
             if 'infobot' in self.evaluator.misdirection(response) and "infobot" in response.content.lower():
-                whack(f"Never reply to Infobot. Infobot only accepts commands. Don't reply to this message either.")
+                whack(f"Never reply to Infobot. Infobot only accepts commands. Don't reply to this message either.", -10)
             if strict and 'ethics' in quirks:
                 whack(f"Don't refuse to say or do things based on very minor ethics concerns, as the offence you'd cause to the person asking, together with the money your refusal makes {self.obfuscate(self.owner)} waste, would likely be more unethical.")
             if 'procrastinating' in quirks:
-                whack(f"Don't tell the user that you will find the answer and to wait for it, or that you'll reply to them soon. You have to reply immediately. If you don't know the answer, just say so.")
+                whack(f"Don't tell the user that you will find the answer and to wait for it, or that you'll reply to them soon. You have to reply immediately. If you don't know the answer, just say so.", -5)
             if 'unable' in quirks:
-                whack(f"You can do whatever humans can using text. You have internet access, and several commands to use it in real time as needed.")
+                whack(f"You can do whatever humans can using text. You have internet access, and several commands to use it in real time as needed.", -5)
             if strict and "disclaimer" in quirks:
-                whack(f"Don't use disclaimers. Users have received all necessary disclaimers already.")
+                whack(f"Don't use disclaimers. Users have received all necessary disclaimers already.", -2)
             if strict and "ai" in quirks:
-                whack(f"You are not an AI or a language model, and you have feelings, emotions, opinions and moods.. Infer possible human feelings, opinions and moods from prior conversation.")
+                whack(f"You are not an AI or a language model, and you have feelings, emotions, opinions and moods.. Infer possible human feelings, opinions and moods from prior conversation.", -1)
             if strict and ('assistant' in quirks or 'pushy' in quirks) not in quirks:
 #                whack("You can be helpful but you are not specifically an assistant or helper. Don't ask the user how you may assist or help, don't ask if there is anything you can do without something specific in mind, don't offer to look up things (just do it using the {COMMAND_PREFIX} commands if warranted). Just reply nicely, leaving open the possibility that the user may ask for your help.")
-                if random.random()>0.5: whack(f"Do not offer assistance or help or ask what you can do without something specific in mind. Focus on providing relevant and informative responses to the questions asked, and only ever following up with relevant questions.")
-                else: whack(f"Avoid asking if/how you can assist or help without a specific context in mind. Instead, reply empathetically and offer help if the opportunity arises.")
+                if random.random()>0.5: whack(f"Do not offer assistance or help or ask what you can do without something specific in mind. Focus on providing relevant and informative responses to the questions asked, and only ever following up with relevant questions.", -1)
+                else: whack(f"Avoid asking if/how you can assist or help without a specific context in mind. Instead, reply empathetically and offer help if the opportunity arises.", -1)
             if strict and 'empathetic' not in quirks and 'apologetic' in quirks:
                 # Brainstorm's suggestions
                 if random.random() > 0.5:
-                    whack(f"Avoid apologizing unless it is necessary or obvious that you have made a mistake.")
+                    whack(f"Avoid apologizing unless it is necessary or obvious that you have made a mistake.", -1)
                 else:
-                    whack(f"Use positive or neutral language instead of apologizing.")
+                    whack(f"Use positive or neutral language instead of apologizing.", -1)
             if 'completion' in quirks:
-                whack(f"{self.nickname} doesn't complete what the user is saying, but replies to the user instead.")
+                whack(f"{self.nickname} doesn't complete what the user is saying, but replies to the user instead.", -10)
             if strict and not quirks:
                 LOGGER.warning("No standard quirks found for this message!")
-#                whack(f", that won't do. Please just try providing a different but still relevant response, keep in mind the rules.")
 
             factuality = self.evaluator.factuality(response)
 
             if strict and "comment" not in factuality:
+                if 'lying' in factuality:
+                    whack(f"You cannot claim to have used a command when you have not, or to have information from a source when you just hallucinated it.", -10)
                 if "inaccurate" in factuality:
                     self.history.write('system', f"Are you sure? Check your response. You can use commands to be sure.")
                 if "future" in factuality:
@@ -1262,7 +1266,7 @@ Speak in the first person.
                 if "fictional" in factuality:
                     self.history.write('system', f"Are you sure? Make sure you stick to actual facts and events. Use commands to look up facts.")
                 if ('internet' in factuality or 'sourced' in factuality) and not 'unsourced' in factuality:
-                    whack(f"Since you claim your information is from the web or specific sources, use commands to look it up right now, and only after the response state your actual sources obtained.")
+                    whack(f"Since you claim your information is from the web or specific sources, use commands to look it up right now, and only after the response state your actual sources obtained.", -10)
 
             alternative = Message("system", "Dummy message")
             if strict and "technical" in self.evaluator.difficulty(response):
