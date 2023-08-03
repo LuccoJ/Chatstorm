@@ -424,7 +424,7 @@ class Evaluator:
             'news': "is a headline or a collection of headlines",
             'pompous': "sounds overly formal, pompous, like a formal letter, and unlike informal chat",
             'procrastinating': "is asking another party to wait a minute, a moment, or to let the first party think, or is promising to come back with an answer soon",
-            'unable': "is claiming that it cannot do something because of lack of internet access, or because it's later than 2021, or for other reasons that wouldn't apply to a human being",
+            'unable': "claims it cannot do something due to no internet access, or for other reasons that wouldn't apply to a regular human being in front of a computer",
             'empathetic': "is sorry for other's misfortune, or to hear something bad, or asks if there's some way to help a person out of a bad situation",
             'casual': "looks like a message from a human chatter, possibly containing a non-pushy and informal offer to help or do a favor, or a short informal apology",
         }, examples=[
@@ -1222,7 +1222,7 @@ Speak in the first person.
             if 'procrastinating' in quirks:
                 whack(f"Don't tell the user that you will find the answer and to wait for it, or that you'll reply to them soon. You have to reply immediately. If you don't know the answer, just say so.")
             if 'unable' in quirks:
-                whack(f"You are able to do whatever humans can using text. You do have internet access, and several commands to use it in real time as needed.")
+                whack(f"You can do whatever humans can using text. You have internet access, and several commands to use it in real time as needed.")
             if strict and "disclaimer" in quirks:
                 whack(f"Don't use disclaimers. Users have received all necessary disclaimers already.")
             if strict and "ai" in quirks:
