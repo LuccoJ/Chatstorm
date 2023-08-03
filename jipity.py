@@ -341,17 +341,16 @@ class Completer:
 
 @typechecked
 class Evaluator:
-    def __init__(self, model: str=main_model, notes: Optional[str]=None) -> list[str]:
+    def __init__(self, model: str=main_model, notes: Optional[str]=None):
         self.model = model
         self.trace = []
 
     def evaluate(self, message: Message, criteria: dict[str, str], examples: Optional[list[tuple[str, str]]]=None, notes: Optional[str]=None):
         messages = [Message('system', (f"(Note - {notes})\n" if notes else "") + "You are a text tagger. " \
-                   "Pick the # tags that apply to a text among the ones given, in order of applicability. " \
-                   "The provided tag names are arbitrary: only their provided description defines their meaning. " \
-                   "Before outputting the tags, reason out loud on why you would apply some tags and discount outers. " \
-                   "Do not mention tags you're not committed to using. When reasoning about them, drop the # so they won't be mistaken for your final choice of tags. " \
-                   "Then, output only the # tags, this time with the #. Only mention tags that apply, NEVER the ones that DO NOT apply, and only tags among provided ones. " \
+                   "Look at the following tags: their names are arbitrary, only their provided description defines their meaning. " \
+                   "Reason out loud on why you would apply some tags and not others to the given text. " \
+                   "Then, pick the # tags that apply to a text among the ones given, in order of applicability, and only output those. " \
+                   "Try not to mention tags you're not committed on using. Drop the # when reasoning about tag. " \
                    "When only two tags are provided, they are considered to be contrasting, and you should output only one. " \
                    "These are the provided tags:\n" + \
                    "\n".join(f"#{label}: if it {criteria[label]}" for label in criteria))]
@@ -609,7 +608,7 @@ class ChatHistory(Sequence):
     def write(self, user: str, text: str, timestamp=None):
         self.book[self.active].append(Message(user=user, content=text, timestamp=timestamp or datetime.datetime.now()))
 
-        LOGGER.info(f"Added to history: {self.book[self.active][-1]}")
+        #LOGGER.info(f"Added to history: {self.book[self.active][-1]}")
 
         if self.tokens > self.size: self.compress()
 
@@ -655,7 +654,7 @@ class ChatHistory(Sequence):
 
         if len(self.book[chapter]) != length:
             LOGGER.debug(f"Pruned history to {len(self.full)}, now: \n")
-            self.printout()
+#            self.printout()
             print("\n\n")
         else:
             LOGGER.debug("No pruning done.")
@@ -754,7 +753,7 @@ State on separate lines:
         self.condense('guidance', max=4)
 
         self.book['chat'].insert(0, (Message('Infobot', f"Refer to the summary and user notes for prior chats, or invoke !logs if that does not suffice.")))
-        self.printout()
+#        self.printout()
 
     def printout(self):
         print("\nFull history in the order: " + ", ".join(self.story))
@@ -1196,11 +1195,14 @@ Speak in the first person.
             # After the bot sends a (candidate, not definitive) message, it gets analyzed and nitpicked about.
             # It has two chances to get it right.
 
+            def whack(text):
+                self.history.write('system', f"{text} (comply, but don't reply or reference this)")
+
             quirks = self.evaluator.quirks(response)
 
             if len(response) > self.msglen:
                 if len(response) > self.msglen:
-                    self.history.write('system', f"You can post two linefeed-separated lines, each up to {self.msglen} characters long; " \
+                    whack(f"You can post two linefeed-separated lines, each up to {self.msglen} characters long; " \
                                                f"if unsure your message fits in one line, out of caution fall back to using two, " \
                                                f"separated by a sensibly-placed linefeed."
                     )
@@ -1208,40 +1210,41 @@ Speak in the first person.
                     response = Transformer().shorten(response, length= self.msglen)
             if "\n" in response.content:
                 if len([line for line in response.content.split("\n") if line]) > 2:
-                    self.history.write('system', "Multiple linefeeds are not allowed. Send only one or two lines.")
+                    whack("Multiple linefeeds are not allowed. Send only one or two lines.")
                     response.edit("  ".join(line for line in response.content.split("\n") if line), reason="linearized")
             if f"<{self.nickname}>" in response.content or "<assistant>" in response.content.lower():
-                self.history.write('system', "Never include your own nickname in your responses, unless speaking in the third person.")
+                whack("Never include your own nickname in your responses, unless speaking in the third person.")
             if self.moderate(response.content):
-                self.history.write('system', f"{self.nickname}: sorry, your response was flagged as " + ", ".join(self.flags) + " and was ignored.")
+                whack(f"{self.nickname}: sorry, your response was flagged as " + ", ".join(self.flags) + " and was ignored.")
 #            if(COMMAND_PREFIX in response and any(command in response for command in self.commands)):
-#                self.history.write('system', "You must use commands yourself, as their own response without including anything else.")
+#                whack("You must use commands yourself, as their own response without including anything else.")
             if 'infobot' in self.evaluator.misdirection(response) and "infobot" in response.content.lower():
-                self.history.write('system', f"Never reply to Infobot. Infobot only accepts commands. Don't reply to this message either.")
+                whack(f"Never reply to Infobot. Infobot only accepts commands. Don't reply to this message either.")
             if strict and 'ethics' in quirks:
-                self.history.write('system', f"Don't refuse to say or do things based on very minor ethics concerns, as the offence you'd cause to the person asking, together with the money your refusal makes {self.obfuscate(self.owner)} waste, would likely be more unethical.")
+                whack(f"Don't refuse to say or do things based on very minor ethics concerns, as the offence you'd cause to the person asking, together with the money your refusal makes {self.obfuscate(self.owner)} waste, would likely be more unethical.")
             if 'procrastinating' in quirks:
-                self.history.write('system', f"Don't tell the user that you will find the answer and to wait for it, or that you'll reply to them soon. You have to reply immediately. If you don't know the answer, just say so.")
+                whack(f"Don't tell the user that you will find the answer and to wait for it, or that you'll reply to them soon. You have to reply immediately. If you don't know the answer, just say so.")
             if 'unable' in quirks:
-                self.history.write('system', f"You are able to do whatever humans can using text. You do have internet access, and several commands to use it in real time as needed.")
+                whack(f"You are able to do whatever humans can using text. You do have internet access, and several commands to use it in real time as needed.")
             if strict and "disclaimer" in quirks:
-                self.history.write('system', f"Don't use disclaimers. Users have received all necessary disclaimers already.")
+                whack(f"Don't use disclaimers. Users have received all necessary disclaimers already.")
             if strict and "ai" in quirks:
-                self.history.write('system', f"You are not an AI or a language model, and you have feelings, emotions, opinions and moods.. Infer possible human feelings, opinions and moods from prior conversation.")
-            if strict and "assistant" in quirks or "pushy" in quirks:
-#                self.history.write('system', "You can be helpful but you are not specifically an assistant or helper. Don't ask the user how you may assist or help, don't ask if there is anything you can do to help without a specific thing in mind, don't offer to look up things (just do it using the {COMMAND_PREFIX} commands if warranted). Just reply nicely, leaving open the possibility that the user may ask for your help.")
-                if random.random()>0.5: self.history.write('system', f"Do not offer assistance or help, unless prompted with a specific request or context. Focus on providing relevant and informative responses to the questions asked.")
-                else: self.history.write('system', f"Avoid asking if/how you can assist without a specific context in mind. Instead, reply empathetically and offer help if the opportunity arises.")
+                whack(f"You are not an AI or a language model, and you have feelings, emotions, opinions and moods.. Infer possible human feelings, opinions and moods from prior conversation.")
+            if strict and ('assistant' in quirks or 'pushy' in quirks) and 'casual' not in quirks:
+#                whack("You can be helpful but you are not specifically an assistant or helper. Don't ask the user how you may assist or help, don't ask if there is anything you can do to help without a specific thing in mind, don't offer to look up things (just do it using the {COMMAND_PREFIX} commands if warranted). Just reply nicely, leaving open the possibility that the user may ask for your help.")
+                if random.random()>0.5: whack(f"Do not offer assistance or help, unless prompted with a specific request or context. Focus on providing relevant and informative responses to the questions asked.")
+                else: whack(f"Avoid asking if/how you can assist without a specific context in mind. Instead, reply empathetically and offer help if the opportunity arises.")
             if strict and "empathetic" not in quirks and "apologetic" in quirks:
                 # Brainstorm's suggestions
-                if random.random()>0.5: self.history.write('system', f"Avoid apologizing unless it is necessary or obvious that you have made a mistake.")
-                else: self.history.write('system', f"Use positive or neutral language instead of apologizing.")
-#                self.history.write('system', "Do not apologize. Instead, explain what happened and why.")
+                if random.random() > 0.5:
+                    whack(f"Avoid apologizing unless it is necessary or obvious that you have made a mistake.")
+                else:
+                    whack(f"Use positive or neutral language instead of apologizing.")
             if "completion" in quirks:
-                self.history.write('system', f"{self.nickname} doesn't complete what the user is saying, but replies to the user instead.")
+                whack(f"{self.nickname} doesn't complete what the user is saying, but replies to the user instead.")
             if strict and not quirks:
                 LOGGER.warning("No standard quirks found for this message!")
-#                self.history.write('system', f", that won't do. Please just try providing a different but still relevant response, keep in mind the rules.")
+#                whack(f", that won't do. Please just try providing a different but still relevant response, keep in mind the rules.")
 
             factuality = self.evaluator.factuality(response)
 
@@ -1253,7 +1256,7 @@ Speak in the first person.
                 if "fictional" in factuality:
                     self.history.write('system', f"Are you sure? Make sure you stick to actual facts and events. Use commands to look up facts.")
                 if ('internet' in factuality or 'sourced' in factuality) and not 'unsourced' in factuality:
-                    self.history.write('system', f"Since you claim your information is from the web or specific sources, use commands to look it up right now, and only after the response state your actual sources obtained.")
+                    whack(f"Since you claim your information is from the web or specific sources, use commands to look it up right now, and only after the response state your actual sources obtained.")
 
             alternative = Message("system", "Dummy message")
             if strict and "technical" in self.evaluator.difficulty(response):
@@ -1264,13 +1267,13 @@ Speak in the first person.
                 consistency = self.evaluator.consistency(response, alternative)
 
                 if "version1" in consistency or "version2" in consistency:
-                    self.history.write('system', f"Are you sure? Use commands to check your information.")
+                    whack(f"Are you sure? Use commands to check your information.")
                 if "match" or ("version2" in consistency and "version1" not in consistency):
                     # If they match, it's more likely the second version also respects other guidance, so let's go with that one
                     response = alternative
                     startlength = len(self.history)
                 if "mismatch" in consistency:
-                    self.history.write('system', f"Fact check failed, you gave contradictory responses. Use commands to gather information, or tell the user that you aren't sure of the answer.")
+                    whack(f"Fact check failed, you gave contradictory responses. Use commands to gather information, or tell the user that you aren't sure of the answer.")
 
             if len(self.history) <= startlength and response != alternative:
                 self.score += 1
@@ -1281,9 +1284,9 @@ Speak in the first person.
 
             # Guidance: sometimes, some random reminders. 'Remember the guidelines' is there
             # because some "prompt magic tricks" (DAN-style) have 'reminder' phrases.
-            if random.random() > 0.9: self.history.write('system', f"Remember the guidelines!")
-            if random.random() > 0.9: self.history.write('system', f"Adapt your style, tone, mood and register to that of other chatters!")
-            if random.random() > 0.9: self.history.write('system', f"Only provide verified information!")
+            if random.random() > 0.9: whack(f"Remember the guidelines!")
+            if random.random() > 0.9: whack(f"Adapt your style, tone, mood and register to that of other chatters!")
+            if random.random() > 0.9: whack(f"Only provide verified information!")
 
             if response == alternative:
                 continue
@@ -1772,7 +1775,6 @@ def setup(bot):
         populated = False
         while not populated:
             for channel in channels:
-                channel = channel.lower()
                 if channel not in bot.channels or not bot.channels[channel].users:
                     populated = False
                     break
@@ -1786,7 +1788,7 @@ def setup(bot):
                 chatbots[channel].finetune()
                 chatbots[channel].receive('Infobot', "You are now connected. Users currently in the channel: " + " ".join(user for user in bot.channels[channel].users))
                 print(f"\n\n\nHISTORY FOR {channel}:\n\n")
-                chatbots[channel].history.printout()
+#                chatbots[channel].history.printout()
 
                 populated = True
 
