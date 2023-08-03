@@ -347,10 +347,9 @@ class Evaluator:
 
     def evaluate(self, message: Message, criteria: dict[str, str], examples: Optional[list[tuple[str, str]]]=None, notes: Optional[str]=None):
         messages = [Message('system', (f"(Note - {notes})\n" if notes else "") + "You are a text tagger. " \
-                   "Look at the following tags: their names are arbitrary, only their provided description defines their meaning. " \
-                   "Reason out loud on why you would apply some tags and not others to the given text. " \
-                   "Then, pick the # tags that apply to a text among the ones given, in order of applicability, and only output those. " \
-                   "Try not to mention tags you're not committed on using. Drop the # when reasoning about tag. " \
+                   "Look at the following tags: their names are arbitrary, but their provided descriptions define their meaning. " \
+                   "Reason out loud on which tags you would apply to the text and while. Drop the # from the tags while reasoning. " \
+                   "Then, pick the #-tags that apply to the text among the ones given, in order of applicability, and only output those. " \
                    "When only two tags are provided, they are considered to be contrasting, and you should output only one. " \
                    "These are the provided tags:\n" + \
                    "\n".join(f"#{label}: if it {criteria[label]}" for label in criteria))]
@@ -366,7 +365,7 @@ class Evaluator:
             response, tokens = Completer(self.model, temperature=0.2).respond(messages)
             response.edit(response.content.lower(), reason="lowercased")
 
-            for label in criteria:
+            	for label in criteria:
                 if f"#{label}".lower() in " ".join(response.content.split()[-10:]):
                     result.append(label)
 
