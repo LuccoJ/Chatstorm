@@ -1174,6 +1174,7 @@ Speak in the first person.
             self.history.book['chat'] = self.history.book['chat'][cutoff:]
 
         for attempt in range(0, 2):
+            LOGGER.debug(f"Completion attempt n. {attempt}")
             # Guidance: a 'score' is sometimes used by prompt "magic tricks", so I've recently tried to introduce it.
             # If the things think it has broken a guideline, it loses a point. If it sends a message without breaking any,
             # then it gains a point.
