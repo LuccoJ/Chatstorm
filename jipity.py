@@ -348,8 +348,8 @@ class Evaluator:
     def evaluate(self, message: Message, criteria: dict[str, str], examples: Optional[list[tuple[str, str]]]=None, notes: Optional[str]=None):
         messages = [Message('system', (f"(Note - {notes})\n" if notes else "") + "You are a text tagger. " \
                    "Consider the descriptions of following tags: discount their names, as their descriptions define their meanings. " \
-                   "Reason out loud on which tags you would apply to the text and why, but only ever mention the tags without a # while reasoning. " \
-                   "Afterward, pick the tags that apply to the text among the ones given, in order of applicability, and only output those, with a # in front of each of them. " \
+                   "Think out loud and reason on which tags you would apply to the text and why, but mention the tags without a # while reasoning. " \
+                   "Then pick the tags that apply to the text among the ones given, in order of applicability, and output those, with a # in front of each of them. " \
                    "When only two tags are provided, you should pick only one of them. When a tag overrides another, don't output the overridden tag. " \
                    "These are the provided tags:\n" +
                    "\n".join(f"{label}: if it {criteria[label]}" for label in criteria))]
