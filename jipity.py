@@ -1204,7 +1204,7 @@ Speak in the first person.
             # It has two chances to get it right.
 
             def whack(text: str, points: int=-1):
-                self.history.write('system', f"{text} (you lose {abs(point)} points; comply, but don't reply or reference this)")
+                self.history.write('system', f"{text} (you lose {abs(points)} points; comply, but don't reply or reference this)")
                 self.score += points
 
             quirks = self.evaluator.quirks(response)
