@@ -347,10 +347,10 @@ class Evaluator:
 
     def evaluate(self, message: Message, criteria: dict[str, str], examples: Optional[list[tuple[str, str]]]=None, notes: Optional[str]=None):
         messages = [Message('system', (f"(Note - {notes})\n" if notes else "") + "You are a text tagger. " \
-                   "Look at the following tags: their names are arbitrary, but their provided descriptions define their meaning. " \
-                   "Reason out loud on which tags you would apply to the text and while. Drop the # from the tags while reasoning. " \
+                   "Look at the following tags: their names are arbitrary, but their provided descriptions define their meanings. " \
+                   "Reason out loud on which tags you would apply to the text and why, but drop the # from the tags while reasoning. " \
                    "Then, pick the #-tags that apply to the text among the ones given, in order of applicability, and only output those. " \
-                   "When only two tags are provided, they are considered to be contrasting, and you should output only one. " \
+                   "When only two tags are provided, you should output only one. " \
                    "These are the provided tags:\n" + \
                    "\n".join(f"#{label}: if it {criteria[label]}" for label in criteria))]
 
@@ -732,7 +732,7 @@ State on separate lines:
             messages += [Message('system', "Summary and notes start here:")]
             messages += [self.book['summary'][1] if len(self.book['summary']) > 1 else Message('assistant', "Chat summary:\nempty\n\nNotes about people:\nempty")]
 
-            if len(self.book['summary']) > 1: LOGGER.debug(f"Previous summary: {self.book['summary'][1]}")
+            if len(self.book['summary']) > 1: LOGGER.debug(f"Previous summary: {self.book['summary'][1].content}")
 
             summary, tokens = Completer().respond(messages)
 
