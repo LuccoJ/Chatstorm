@@ -603,13 +603,11 @@ class ChatHistory(Sequence):
 
     def add(self, message: Message):
         self.book[self.active].append(message)
+        LOGGER.info(f"Added to history: {self.book[self.active][-1]}")
+        if self.tokens > self.size: self.compress()
 
     def write(self, user: str, text: str, timestamp=None):
-        self.book[self.active].append(Message(user=user, content=text, timestamp=timestamp or datetime.datetime.now()))
-
-        #LOGGER.info(f"Added to history: {self.book[self.active][-1]}")
-
-        if self.tokens > self.size: self.compress()
+        self.add(Message(user=user, content=text, timestamp=timestamp or datetime.datetime.now()))
 
     def __getitem__(self, index):
         return list(self.full)[index]
