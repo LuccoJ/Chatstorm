@@ -651,6 +651,7 @@ class ChatHistory(Sequence):
         length = len(self.book[chapter])
 
         self.book[chapter] = [message for message in self.book[chapter] if message.user != 'system']
+        self.book[chapter] = [message for message in self.book[chapter] if message.user != 'Infobot' or not message.content.startswith("Error:")]
 
         if len(self.book[chapter]) != length:
             LOGGER.debug(f"Pruned history to {len(self.full)}, now: \n")
@@ -671,6 +672,8 @@ class ChatHistory(Sequence):
         else:
             LOGGER.warning("NOT compressing history that is marked as incompressible")
             return
+
+        self.prune('chat')
 
 # Guidance: This part serve to "compress" the history so that it will fit in the bot's memory again.
 # I ask a GPT instance to determine which parts of the conversation are still relevant, and summarize the rest.
@@ -1609,7 +1612,7 @@ def invoke(bot, trigger, text=None):
         LOGGER.critical(f"Exception occurred: {error}")
         stacktrace = traceback.format_exc()
         LOGGER.critical(f"{stacktrace}")
-        chatbots[channel].receive('Infobot', f"An exception occurred, details follow. Explain very briefly in layman language, then address directly {chatbots[channel].owner}, suggesting a fix, on a separate line, only if you can spot the bug, including information from the stacktrace, but do specify the line(s) that triggered the error anyway (don't suggest generic fixes).\n\n{stacktrace}")
+        chatbots[channel].receive('Infobot', f"Error: Details follow. Explain very briefly, then address directly {chatbots[channel].owner}, suggesting a fix on a separate line if you can spot the bug, including information from the stacktrace, but do specify the line(s) that triggered the error anyway (don't suggest overly generic fixes).\n\n{stacktrace}")
         for response in chatbots[channel].reply(strict=False):
             reply(bot, response)
         LOGGER.critical(f"Exception occurred: {error}\n{stacktrace}")
