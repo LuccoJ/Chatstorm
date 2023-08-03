@@ -292,7 +292,7 @@ class Completer:
             except (openai.error.RateLimitError, openai.error.ServiceUnavailableError, openai.error.APIError) as error:
                 terminal = error
                 LOGGER.warning(f"Backing off by {backoff} seconds, as we're being rate limited due to {error}")
-                time.sleep(backoff)
+                time.sleep(backoff+5.0*random.random())
                 backoff *= 2
                 response = None
 
