@@ -687,8 +687,8 @@ All things being equal, prefer listing higher numbers over lower ones. List each
 In the following chat, each message is numbered (as in 'n: message').
 State on three separate lines:
 - first, you must infer the likely mood and state of mind of {self.chatter} based on the whole chat (examples: cheery, sad, pensive, upset, angry, argumentative, worried, anxious...), stated briefly;
-- then, you must specify the index number of the first message part of the most recent (i.e. highest numbered) conversation subject; if unsure, you can specify more than one candidate number;
-- finally, you must abridge the conversation by stating the least possible amount of index numbers that make it feasible to follow the conversation without changes in meaning.\n
+- second, you must specify the index number of the first message part of the most recent (i.e. highest numbered) conversation subject; if unsure, you can specify more than one candidate number;
+- third, you must abridge the conversation by stating the minimum amount of index numbers (list each line number though, not ranges) that make it feasible to follow the conversation without changes in meaning.\n
 """)]
 # (not currently used) - finally, abridge the conversation starting with the message having the lowest number you stated, to make it as short as feasible but unchanged in meaning, and identical in format ("n: <sender> message"): you can shorten messages, remove unecessary ones, rearrange them and do anything else as long as overall content and formatting with the sender in <> are preserved. You cannot merge messages giving them multiple numbers, and you cannot change them to the third person. They must look exactly like the original messages in terms of formatting.\n""")]
 
@@ -1459,7 +1459,7 @@ Whenever you are prompted with '> ', you MUST issue a command.""")
         if not hits:
             raise RuntimeError("Could not find any hit with those keywords")
 
-        return "\n".join(f"- {hit['title']}: {hit['href']}" for hit in hits)
+        return "\n".join(f"- {hit['title']}: {hit.get('href', hit['url'])} (hit['body'])" for hit in hits)
 
     def search_text(self, command, parameters, user='system'):
         return self.search(duckduckgo_search.DDGS().text, command, parameters, user)
