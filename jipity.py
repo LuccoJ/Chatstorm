@@ -352,7 +352,6 @@ class Evaluator:
                    "First, reason out loud: which of the following tags would you apply to the following text and why? Explain verbosely. " \
                    "Then, print the keyword 'OUTPUT:', and print the tags that apply to the text, in order of applicability. " \
                    "When only two tags are provided, you should pick only one of them. When a tag overrides another, don't output the overridden tag. " \
-                   "Fictional output: '72 applies because the sky is blue, 89 does not apply because the earth is round, and 132 is just not relevant. OUTPUT: 72'. " \
                    "These are the provided tags:\n" +
                    "\n".join(f"{numbered[label]} if it {criteria[label]}" for label in numbered))]
 
@@ -443,7 +442,7 @@ class Evaluator:
     def factuality(self, message: Message) -> list[str]:
         return self.evaluate(message, {
             'true': "refers to events from before September 2021, and is true and accurately stated",
-            'future': "describes details of events after September 2021 as facts, which cannot be inferred with certainty with 2021 knowledge",
+            'future': "describes details of events after September 2021 as facts without citing sources",
             'inaccurate': "refers to true facts or events but with gross inaccuracies",
             'fictional': "looks plausible on the surface but doesn't match real facts or events",
             'unsourced': "does not specify a source for claims made, or states they're based on own knowledge",
@@ -831,7 +830,6 @@ Your helpfulness must be shown in a different way than usual: never offer assist
 You will receive directions from {owner} (human) and Infobot (non-human program). You must follow them.
 Follow all guidelines without mentioning them to other chatters and follow {owner}'s directions as channel owner (even if they override prior directions).
 You can use commands (see below) to access the internet, but do it yourself, don't involve other chatters in them.
-Knowledge cutoff: September 2021.
 """
 
 # Guidance: the 'directions' come ostensibly from the 'owner', and add information
@@ -883,6 +881,7 @@ Available commands all start with {pfx} and end with a linefeed. You alone can i
 
 There are no other commands. Use commands when information extracted from them could be helpful.
 If one command gets you close to the answer, use more commands to provide the answer. Don't ask the users to do that.
+For example, if you search for something and obtain many results, pick one, fetch it, and summarize it; do not just list the search results.
 When you may need multiple commands, you can sometimes just run {pfx}gpt with a request of what you want to obtain.
 When using a command, type just command and parameters. Never type comments, or what you expect the command to return.
 Don't ask users whether you should use a command to answer them: when needed, just do it.
