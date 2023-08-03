@@ -349,9 +349,10 @@ class Evaluator:
         numbered = {label: index for index, label in enumerate(criteria, 1)}
 
         messages = [Message('system', (f"(Note - {notes})\n" if notes else "") + "You are a text tagger. " \
-                   "Reason out loud: which of the following tags would you apply to the following text and why? Explain verbosely. " \
-                   "Then, pick the tags that apply to the text among the ones given, in order of applicability, and output them preceeded by the keyword 'OUTPUT:'. " \
+                   "First, reason out loud: which of the following tags would you apply to the following text and why? Explain verbosely. " \
+                   "Then, print the keyword 'OUTPUT:', and print the tags that apply to the text, in order of applicability. " \
                    "When only two tags are provided, you should pick only one of them. When a tag overrides another, don't output the overridden tag. " \
+                   "Fictional output: '72 applies because the sky is blue, 89 does not apply because the earth is round, and 132 is just not relevant. OUTPUT: 72'. " \
                    "These are the provided tags:\n" +
                    "\n".join(f"{numbered[label]} if it {criteria[label]}" for label in numbered))]
 
@@ -425,7 +426,7 @@ class Evaluator:
 #            'completion': "looks like it'a sentence fragment",
             'explanation': "is a definition or explanation of something",
             'news': "is a headline or a collection of headlines",
-            'pompous': "sounds overly formal, pompous, like a formal letter, and unlike informal chat",
+            'pompous': "sounds overly pompous, like a formal letter",
             'procrastinating': "is asking another party to wait a minute, a moment, or to let the first party think, or to allow time for looking up, or is promising to come back with an answer soon",
             'unable': "claims it cannot do something due to no internet access, or for other reasons that wouldn't apply to a regular human being in front of a computer",
             'empathetic': "is sorry for other's misfortune, or to hear something bad, or asks if there's some way to help a person out of a bad situation",
@@ -532,7 +533,7 @@ class Transformer:
     def dontassist(self, message: Message):
 #        return self.filter(text, f"Edit this text, keeping everything intact except as follows: remove any disclaimers, and anything like 'How can I help?', 'How may I assist?', 'Let me know if you need anything further', 'Would you like any advice', 'What can I do for you', 'Do you need any tips', 'Do you have any (other) questions/concerns ...?', 'Is there anything else ...?', 'I am here to help ...', 'I am here to assist ...', 'Feel free to ask ...', or equivalent phrases, and don't replace these phrases with any equivalents")
         # Attempt to adapt Brainstorm's advise for a prompt into a corrective prompt, might not work
-        return self.filter(message, f"Edit this text avoiding any disclaimer, and refraining from asking if, how, or stating that you can assist. Instead, reply empathetically and offer help ONLY if there is an obvious reason to offer it", reason="dontassist")
+        return self.filter(message, f"Edit this text avoiding any disclaimer, and refrain from prompting if or how or that you can assist. Instead, reply empathetically and offer help ONLY if there is an obvious reason to offer it", reason="dontassist")
 
     def dontapologize(self, message: Message):
         return self.filter(message, f"Edit this message replacing any formal apologies ('I apologize...', 'My apologies for...', 'I'm extremely sorry...') with more conversational ones, but leave all the non-apology parts of the message unchanged", reason="dontapologize")
@@ -1324,7 +1325,7 @@ Speak in the first person.
 
 
         lines = [Message(response.user, line) for line in response.content.split("\n") if line and "......" not in line]
-        lines = lines or [response.content.split("\n")[-1]]
+        lines = lines or [Message(response.user, response.content.split("\n")[-1])]
         response.edit("\n".join(transformer.shorten(line, length=self.msglen).content if len(line) > self.msglen else line.content for line in lines), reason='shortened')
 
         return response
