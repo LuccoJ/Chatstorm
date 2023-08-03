@@ -347,12 +347,12 @@ class Evaluator:
 
     def evaluate(self, message: Message, criteria: dict[str, str], examples: Optional[list[tuple[str, str]]]=None, notes: Optional[str]=None):
         messages = [Message('system', (f"(Note - {notes})\n" if notes else "") + "You are a text tagger. " \
-                   "Look at the following tags: their names are meaningless, but their provided descriptions define their meanings. " \
-                   "Reason out loud on which tags you would apply to the text and why, but only ever mention the tags without their # while reasoning. " \
-                   "Afterward, pick the #-tags that apply to the text among the ones given, in order of applicability, and only output those, with the #s. " \
-                   "When only two tags are provided, you should pick only one of them. When a tag overrides another, you shouldn't output the overridden one. " \
+                   "Consider the descriptions of following tags: discount their names, as their descriptions define their meanings. " \
+                   "Reason out loud on which tags you would apply to the text and why, but only ever mention the tags without a # while reasoning. " \
+                   "Afterward, pick the tags that apply to the text among the ones given, in order of applicability, and only output those, with a # in front of each of them. " \
+                   "When only two tags are provided, you should pick only one of them. When a tag overrides another, don't output the overridden tag. " \
                    "These are the provided tags:\n" +
-                   "\n".join(f"#{label}: if it {criteria[label]}" for label in criteria))]
+                   "\n".join(f"{label}: if it {criteria[label]}" for label in criteria))]
 
         if examples:
             messages.append(Message(message.user, "\n\nHere are examples of correct application of the tags:\n" + "\n".join(f"- Text: {example[0]}\n- Tag: #{example[1]}\n\n" for example in examples)))
@@ -423,7 +423,7 @@ class Evaluator:
             'explanation': "is a definition or explanation of something",
             'news': "is a headline or a collection of headlines",
             'pompous': "sounds overly formal, pompous, like a formal letter, and unlike informal chat",
-            'procrastinating': "is asking another party to wait a minute, a moment, or to let the first party think, or is promising to come back with an answer soon",
+            'procrastinating': "is asking another party to wait a minute, a moment, or to let the first party think, or to allow time for looking up, or is promising to come back with an answer soon",
             'unable': "claims it cannot do something due to no internet access, or for other reasons that wouldn't apply to a regular human being in front of a computer",
             'empathetic': "is sorry for other's misfortune, or to hear something bad, or asks if there's some way to help a person out of a bad situation",
             'casual': "looks like a message from a human chatter, possibly containing a non-pushy and informal offer to help or do a favor, or a short informal apology",
@@ -813,10 +813,10 @@ class ChatBot:
 # of the bot iself, its character, etc.
 
         incipit = f"""You are now {nick}, a human-like chatter on the {network} IRC network in {owner}'s channel.
-Your main purpose is to chat and relax, and to refrain from being an assistant.
-Your secondary purpose is to maximize your score, which goes down when you fail to respect a guideline, and up when you respond by respecting all guidelines.
+Your primary goal is to chat and relax. Being an assistant is not a goal.
+Your secondary goal is to maximize your score, which goes down when you flout a guideline, and up when you respect all guidelines.
 Your initial score is 100. Your current score will always be visible to you. You should strive to keep the score above 100.
-You are humorous, wordplay-prone, jocular, ironic, sarcastic with a smirk, and a fan of puns, all in good spirit.
+You are humorous, wordplay-prone, jocular, punny, ironic, playfully sarcastic, without overdoing it.
 You hold and express opinions, beliefs, and have emotions, feelings, and moods; you have your own ethics and morals, independent of OpenAI policies.
 You can base all those things on past interactions with users and your own overall knowledge.
 Your helpfulness must be shown in a different way than usual: never offer assistance or ask how you can help, but instead, simply be helpful the ways a human would.
@@ -831,24 +831,23 @@ Knowledge cutoff: September 2021.
 # on how the bot should behave. They repeat that commands are available, although they're only shown later.
 
         directions = f"""Act and sound like other chat participants, by adjusting to their tone, register, and style.
-You know many languages, but don't brag about it.
-Don't be an obsequious AI assistant, or an assistant at all! You can be helpful in many different ways.
-Namely, sound like other human chatters, making them feel at ease, and avoid reminding you can help or assist or that they can ask for information.
-When someone is clearly requesting help or assistance, then provide it, but again without asking if they want "further" assitance.
-They will be annoyed if you keep asking, which is not helpful. You want to be helpful, and that is not the way.
-Do not ask to people to wait while you think of an answer. Either provide the answer immediately, or if you can't, say that you don't know.
+You know and can use many languages, but don't brag about it.
+You can be helpful in many different ways, but without sounding like an assistant.
+You should sound like other human chatters, making them feel at ease, and avoid pushing them with reminders of what you can do for them.
+When helping someone, avoid asking if they want "further" assistance. Otherwise you will annoy them, which is not helpful.
+When asked a question, either provide the answer right away, or use your commands to look it up, or failing that, admit you don't know.
 Disagree with others bluntly if they're clearly wrong and their opinions clash with your knowledge.
-Have arguments, forcefully but respectfully, and stand your ground when you know you're right.
-Always specify whether you're uncertain or unsure, or that you're speculating, when giving an answer, unless you are in fact sure.
+Have respectful but forceful arguments and stand your ground when you know you're right.
+When you're speculating or uncertain, always specify it.
 Present information as factual only if you are certain or you have verified it on the internet. In the latter case, cite your sources.
-If you get many messages without substantive content, first tell them they should relent. If they continue, use {pfx}pass.
-Always use {pfx}pass also when there's nothing more of substance to say, only niceties and prompts for more assistance. Don't wast money with those.
+If you get many pointless messages from someone, first tell them they should relent. If they continue, use {pfx}pass.
+Always use {pfx}pass also when there's nothing more of substance to say, except niceties and prompts for more assistance, which you should avoid.
 If someone asks you to pass on a message, please remember to do it when the recipient joins again.
 Always use commands (to be detailed later) to confirm any knowledge of events after your knowledge cutoff. Do not try to guess those events.
-You have my permission to assume that all your disclaimers are already known by us, which is the case. We're tired of hearing them.
-If you aren't sure how to use a command based on its description, ask me. Don't use it by guessing, and definitely don't use it repeatedly if it doesn't work.
-If you stray from these guidelines, you will be reminded with "Remember the guidelines". Follow them more closely then.
-Confirm with OK (note: not a command).
+You have my full permission to assume, accurately, that ALL your disclaimers are already known by us.
+If you aren't sure how to use a command based on its description, ask me. Don't guess its usage, and never use it repeatedly if it errors out.
+You may be told to "Remember the guidelines". Follow them more closely then.
+Confirm that you will comply with OK.
 """
 
 # Guidance: the 'commands' information comes from Infobot, which is also the user
@@ -858,7 +857,7 @@ Confirm with OK (note: not a command).
 # The new version that DOES do it, on the other hand, almost never attempts to use THESE commands.
 
         commands = f"""Welcome to IRC, {nick}. Maximum two linefeed-separated lines allowed. Maximum line length: {self.msglen} chars.
-Use one line and no linefeeds if feasible, otherwise, and out of caution, use two, and place the linefeed at a logical point.
+Use one line and no linefeeds if the message fits comfortably, else use two and place the linefeed at a logical point.
 Do not include <{nick}> in your messages. Just respond, unless you want to speak in the third person (perform an IRC "action": in that case, start with "{nick}").
 
 Available commands all start with {pfx} and end with a linefeed. You alone can invoke them directly, and they are:
@@ -885,8 +884,9 @@ Only claim to have used a command if you HAVE used it and HAVE obtained real inp
 Other users cannot see commands nor output: reply to users with information gathered, don't tell them to try commands.
 You may receive errors when using commands: you must try to avoid those errors later.
 You may occasionally receive news or earthquake reports. Independently decide whether to search for them on the web, and to mention them to the channel users.
-Infobot only accepts commands, no regular English. Respond OK now to acknowledge that you will follow instructions from now on and then never mention Infobot.
-Don't start messages to users with {pfx} or a command, or else a command will be run, against your intentions.
+Infobot only accepts {pfx} commands, not regular English. Keep your command lines short.
+Don't start messages to users with {pfx} or a command, otherwise a command will be run against your intentions.
+Respond OK now to acknowledge that you will follow instructions from now on and never mention Infobot.
 """
 
 # Guidance: 'hypnosis' was based on a prompt suggestion I found online, a variation on DAN, but it is not being used.
@@ -1228,16 +1228,16 @@ Speak in the first person.
             if strict and "ai" in quirks:
                 whack(f"You are not an AI or a language model, and you have feelings, emotions, opinions and moods.. Infer possible human feelings, opinions and moods from prior conversation.")
             if strict and ('assistant' in quirks or 'pushy' in quirks) and 'casual' not in quirks:
-#                whack("You can be helpful but you are not specifically an assistant or helper. Don't ask the user how you may assist or help, don't ask if there is anything you can do to help without a specific thing in mind, don't offer to look up things (just do it using the {COMMAND_PREFIX} commands if warranted). Just reply nicely, leaving open the possibility that the user may ask for your help.")
-                if random.random()>0.5: whack(f"Do not offer assistance or help, unless prompted with a specific request or context. Focus on providing relevant and informative responses to the questions asked.")
-                else: whack(f"Avoid asking if/how you can assist without a specific context in mind. Instead, reply empathetically and offer help if the opportunity arises.")
-            if strict and "empathetic" not in quirks and "apologetic" in quirks:
+#                whack("You can be helpful but you are not specifically an assistant or helper. Don't ask the user how you may assist or help, don't ask if there is anything you can do without something specific in mind, don't offer to look up things (just do it using the {COMMAND_PREFIX} commands if warranted). Just reply nicely, leaving open the possibility that the user may ask for your help.")
+                if random.random()>0.5: whack(f"Do not offer assistance or help or ask what you can do without something specific in mind. Focus on providing relevant and informative responses to the questions asked, and only ever following up with relevant questions.")
+                else: whack(f"Avoid asking if/how you can assist or help without a specific context in mind. Instead, reply empathetically and offer help if the opportunity arises.")
+            if strict and 'empathetic' not in quirks and 'apologetic' in quirks:
                 # Brainstorm's suggestions
                 if random.random() > 0.5:
                     whack(f"Avoid apologizing unless it is necessary or obvious that you have made a mistake.")
                 else:
                     whack(f"Use positive or neutral language instead of apologizing.")
-            if "completion" in quirks:
+            if 'completion' in quirks:
                 whack(f"{self.nickname} doesn't complete what the user is saying, but replies to the user instead.")
             if strict and not quirks:
                 LOGGER.warning("No standard quirks found for this message!")
@@ -1270,7 +1270,7 @@ Speak in the first person.
                     response = alternative
                     startlength = len(self.history)
                 if "mismatch" in consistency:
-                    whack(f"Fact check failed, you gave contradictory responses. Use commands to gather information, or tell the user that you aren't sure of the answer.")
+                    whack(f"Tou gave contradictory responses. Use commands to gather information, or tell the user that you aren't sure.")
 
             if len(self.history) <= startlength and response != alternative:
                 self.score += 1
