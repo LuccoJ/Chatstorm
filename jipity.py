@@ -1570,7 +1570,7 @@ Whenever you are prompted with '> ', you MUST issue a command.""")
         raise RuntimeError("Keywords not found in logs. You might want to try more generic keywords.")
 
     def noop(self, command, parameters, user='system'):
-        if 'directed' in self.evaluator.ignorability(self.history.last("human").content, nickname=self.nickname):
+        if 'directed' in self.evaluator.ignorability(self.history.last("human"), nickname=self.nickname):
             raise RuntimeError("You cannot pass and ignore a direct request by a user.")
 
         return None
