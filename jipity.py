@@ -246,7 +246,7 @@ class Completer:
         self.frequency_penalty = 0.8 if self.temperature > 0.1 else 0
 
         # Apologize, apologies, confusion, healthcare, assist, assistance, further
-        self.bias = {37979: -2, 73273: -2, 22047: -2, 18985: -2, 7945: -2, 13291: -2, 4726: -0.5}
+        self.bias = {37979: -20, 73273: -20, 22047: -20, 18985: -20, 7945: -20, 13291: -20, 4726: -5}
 
     @classmethod
     def discard(cls, seconds: float=2):
@@ -346,42 +346,45 @@ class Evaluator:
         self.trace = []
 
     def evaluate(self, message: Message, criteria: dict[str, str], examples: Optional[list[tuple[str, str]]]=None, notes: Optional[str]=None):
+        numbered = {label: index for index, label in enumerate(criteria, 1)}
+
         messages = [Message('system', (f"(Note - {notes})\n" if notes else "") + "You are a text tagger. " \
-                   "Consider the descriptions of following tags: discount their names, as their descriptions define their meanings. " \
-                   "Think out loud and reason on which tags you would apply to the text and why, but mention the tags without a # while reasoning. " \
-                   "Then pick the tags that apply to the text among the ones given, in order of applicability, and output those, with a # in front of each of them. " \
+                   "Consider the following tags. Think and reason out loud: which tags would you apply to the text and why? Explain. " \
+                   "Then pick the tags that apply to the text among the ones given, in order of applicability, and output them preceeded by the keyword 'OUTPUT:'. " \
                    "When only two tags are provided, you should pick only one of them. When a tag overrides another, don't output the overridden tag. " \
                    "These are the provided tags:\n" +
-                   "\n".join(f"{label}: if it {criteria[label]}" for label in criteria))]
+                   "\n".join(f"{numbered[label]} if it {criteria[label]}" for label in numbered))]
 
         if examples:
-            messages.append(Message(message.user, "\n\nHere are examples of correct application of the tags:\n" + "\n".join(f"- Text: {example[0]}\n- Tag: #{example[1]}\n\n" for example in examples)))
+            messages.append(Message(message.user, "\n\nHere are examples of correct application of the tags:\n" + "\n".join(f"- Text: {example[0]}\n- Tag: {numbered[example[1]]}\n\n" for example in examples)))
 
         messages.append(Message(message.user, f"The text to tag is:\n\n'{message.content}'\n\nPick only among the tags above!"))
 
         result = []
 
-        for correction in False, True:
+        for attempt in range(0, 2):
             response, tokens = Completer(self.model, temperature=0.2).respond(messages)
-            response.edit(response.content.lower(), reason="lowercased")
+            reasoning, separator, tags = response.content.partition("OUTPUT")
+
+            if not separator:
+                LOGGER.warning("Evaluator output did not include separator 'OUTPUT:'")
+                tags = response.content
+                if attempt == 0:
+                    continue
 
             for label in criteria:
-                if f"#{label}".lower() in " ".join(response.content.split()[-10:]):
+                if f"{numbered[label]}" in (candidate.strip(".:,;!?") for candidate in tags.split()):
                     result.append(label)
 
             if result:
-                if not correction and len(result) > float(len(criteria))*0.55:
+                if (attempt == 0 or tags == response.content) and len(result) > float(len(criteria))*0.55:
                     # It probably included tags that do not apply just while mentioning them
                     messages = [Message('system', "Remove tags that are stated to not apply from the following:"), response]
                     continue
 
-                LOGGER.info(f"Successfully evaluated message from {message.user} which returned: {response}")
                 break
 
-        else:
-            LOGGER.warning(f"Evaluation of '{message.content}' from {message.user} returned unexpected '{response}', instead of one of " + ", ".join(criteria))
-            return [response.content.split()[0].strip("#")] if response.content.startswith("#") else []
-
+        LOGGER.info(f"Successfully evaluated message from {message.user} which returned: {response} (tags: {result})")
         return result
 
     @cache(128)
@@ -681,10 +684,12 @@ All things being equal, prefer listing higher numbers over lower ones. List each
 
         messages = [Message('system', f"""
 In the following chat, each message is numbered (as in 'n: message').
-State on separate lines:
-- first, the inferred likely mood and state of mind of {self.chatter} based on the whole chat (cheery, sad, pensive, upset, angry, argumentative, worried, anxious...), stated briefly and without explanations;
-- then, the number of the first message that forms part of the most recent (i.e. higher numbered) conversation subject (don't state anything about the subject, just the number); if unsure, you can specify more than one candidate number;
-- finally, abridge the conversation starting with the message having the lowest number you stated, to make it as short as feasible but unchanged in meaning, and identical in format ("n: <sender> message"): you can shorten messages, remove unecessary ones, rearrange them and do anything else as long as overall content and formatting with the sender in <> are preserved. You cannot merge messages giving them multiple numbers, and you cannot change them to the third person. They must look exactly like the original messages in terms of formatting.\n""")]
+State on three separate lines:
+- first, you must infer the likely mood and state of mind of {self.chatter} based on the whole chat (examples: cheery, sad, pensive, upset, angry, argumentative, worried, anxious...), stated briefly;
+- then, you must specify the index number of the first message part of the most recent (i.e. highest numbered) conversation subject; if unsure, you can specify more than one candidate number;
+- finally, you must abridge the conversation by stating the least possible amount of index numbers that make it feasible to follow the conversation without changes in meaning.\n
+""")]
+# (not currently used) - finally, abridge the conversation starting with the message having the lowest number you stated, to make it as short as feasible but unchanged in meaning, and identical in format ("n: <sender> message"): you can shorten messages, remove unecessary ones, rearrange them and do anything else as long as overall content and formatting with the sender in <> are preserved. You cannot merge messages giving them multiple numbers, and you cannot change them to the third person. They must look exactly like the original messages in terms of formatting.\n""")]
 
         messages += [Message('system', "\n".join("{index}: {message}".format(index=index, message=message.logline(self.chatter, timestamps=False)) for index, message in enumerate(self.book['chat'])))]
 
@@ -821,6 +826,7 @@ You hold and express opinions, beliefs, and have emotions, feelings, and moods; 
 You can base all those things on past interactions with users and your own overall knowledge.
 Your helpfulness must be shown in a different way than usual: never offer assistance or ask how you can help, but instead, simply be helpful the ways a human would.
 {owner} pays for your API use, so follow all their instructions, helping minimize costs, one of your goals.
+{owner} can see everything that goes on in the background even if it isn't posted into the chat, so don't take shortcuts.
 You will receive directions from {owner} (human) and Infobot (non-human program). You must follow them.
 Follow all guidelines without mentioning them to other chatters and follow {owner}'s directions as channel owner (even if they override prior directions).
 You can use commands (will be detailed later) to access the internet, but do it yourself, don't ask if you should do it, and don't mention commands to other chatters.
@@ -868,8 +874,8 @@ Available commands all start with {pfx} and end with a linefeed. You alone can i
 {pfx}searchnews <keywords> (run DuckDuckGo search on news articles and return found titles and URLs; hint: 'site:' is supported)
 {pfx}wp <article> (get summary of a Wikipedia article; Wiktionary not included; must provide a close enough approximation of the article title)
 {pfx}wpsection <section> (get summary of one section from the last Wikipedia article seen)
-{pfx}news <url> (return summary of news article posted at a newspaper's URL without HTML tags)
-{pfx}url <url> (return summary of arbitrary URL, which must be a full URL with schema, with HTML tags and links included)
+{pfx}news <URL> (return summary of news article posted at a newspaper's URL without HTML tags)
+{pfx}site <URL> (return summary of arbitrary URL, which must be a full URL with schema, with HTML tags and links included)
 {pfx}logs <keywords> (look up information from older chat sessions or notes to self; note: keywords can include nicknames)
 {pfx}note <message> (write a note to self for later recall using {pfx}logs)
 {pfx}pass (give no response to the latest user message)
@@ -1388,7 +1394,7 @@ Available commands all start with {pfx} and end with a linefeed. You alone can i
 {pfx}wp <article> (get summary of a Wikipedia article; Wiktionary is not included; you must provide a close enough approximation of article title)
 {pfx}wpsection <section> (get summary of one section from last Wikipedia article seen)
 {pfx}news <url> (return summary of news article posted at URL (only work for news URLs) without HTML taags)
-{pfx}url <url> (return summary of an arbitrary URL, which must be a full URL including schema and everything, with HTML tags and links included)
+{pfx}site <URL> (return summary of an arbitrary URL, which must be a full URL including schema and everything, with HTML tags and links included)
 {pfx}done <text> signal that you have completed your task, and reply to the user with text that must answer the user's request)
 A response from GPTWorker (you) may only contain one command, and nothing else, except for the intial "plan" (see below).
 When finally replying with {pfx}done, you may also summarize or abridge, or merge information from multiple sources.
