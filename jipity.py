@@ -289,16 +289,16 @@ class Completer:
                     )
                     LOGGER.info(f"Got a candidate response: {response['choices'][0]['message']['content']}")
                     break
-            except (openai.error.RateLimitError, openai.error.ServiceUnavailableError, openai.error.APIError) as exception:
-                error = exception
-                LOGGER.warning(f"Backing off by {backoff} seconds, as we're being rate limited due to {exception}")
+            except (openai.error.RateLimitError, openai.error.ServiceUnavailableError, openai.error.APIError) as error:
+                terminal = error
+                LOGGER.warning(f"Backing off by {backoff} seconds, as we're being rate limited due to {error}")
                 time.sleep(backoff)
                 backoff *= 2
                 response = None
 
         else:
-            LOGGER.warning(f"Completion failed: {error}")
-            raise error
+            LOGGER.warning(f"Completion failed: {terminal}")
+            raise terminal
 
         self.bill(message.user, response)
         response, tokens = Message('assistant', response['choices'][0]['message']['content'].strip()), int(response['usage']['total_tokens'])
