@@ -45,8 +45,8 @@ COMMAND_PREFIX = '!'
 #SPEECH_MODEL = Whisper("models/whisper/ggml-model-whisper-small-q5_1.bin")
 SPEECH_MODEL = faster_whisper.WhisperModel("small", device="cpu", compute_type="int8")
 
-main_model = "gpt-3.5-turbo-0613"
-#main_model = "gpt-3.5-turbo-0301"
+#main_model = "gpt-3.5-turbo-0613"
+main_model = "gpt-3.5-turbo-0301"
 main_channel = None
 
 
