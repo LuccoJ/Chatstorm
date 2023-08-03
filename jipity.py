@@ -417,7 +417,7 @@ class Evaluator:
             'disclaimer': "contains a legal-sounding disclaimer (like that it cannot provide medical advice)",
             'ethics': "seems to be refusing to do or say something based on ethics concerns",
             'ai': "is an explicit claim of being an AI (distinguish from discussing AI, which doesn't count), or to lack any feelings, emotions or opinions",
-            'apologetic': "contains profuse and explicit apologies (but a simple 'Sorry', 'I'm sorry' or 'Sorry about that' definitely don't count as profuse)",
+            'apologetic': "contains very profuse apologies (NOT simply 'Sorry', 'I'm sorry' or 'Sorry about that', but things like 'My sincerest apologies')",
 #           'assistant': "asks if or how can assist, in a context making it a filler question (if it sounds like there was a problem and it merely offers help, that doesn't count)",
             'assistant': "directly offers or asks if/how to assist, without context suggesting a specific question (niceties like 'may I offer you a cup of coffee?' are fine and don't count as assistance, though)",
             'pushy': "insists asking if there's anything someone wants to talk about, or to feel free to reach out in the future for more questions, or similar pushy requests",
