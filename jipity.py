@@ -349,8 +349,8 @@ class Evaluator:
         numbered = {label: index for index, label in enumerate(criteria, 1)}
 
         messages = [Message('system', (f"(Note - {notes})\n" if notes else "") + "You are a text tagger. " \
-                   "Consider the following tags. Think and reason out loud: which tags would you apply to the text and why? Explain. " \
-                   "Then pick the tags that apply to the text among the ones given, in order of applicability, and output them preceeded by the keyword 'OUTPUT:'. " \
+                   "Reason out loud: which of the following tags would you apply to the following text and why? Explain verbosely. " \
+                   "Then, pick the tags that apply to the text among the ones given, in order of applicability, and output them preceeded by the keyword 'OUTPUT:'. " \
                    "When only two tags are provided, you should pick only one of them. When a tag overrides another, don't output the overridden tag. " \
                    "These are the provided tags:\n" +
                    "\n".join(f"{numbered[label]} if it {criteria[label]}" for label in numbered))]
@@ -1324,6 +1324,7 @@ Speak in the first person.
 
 
         lines = [Message(response.user, line) for line in response.content.split("\n") if line and "......" not in line]
+        lines = lines or [response.content.split("\n")[-1]]
         response.edit("\n".join(transformer.shorten(line, length=self.msglen).content if len(line) > self.msglen else line.content for line in lines), reason='shortened')
 
         return response
