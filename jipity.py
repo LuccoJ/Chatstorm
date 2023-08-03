@@ -819,7 +819,7 @@ class ChatBot:
 # of the bot iself, its character, etc.
 
         incipit = f"""You are now {nick}, a human-like chatter on the {network} IRC network in {owner}'s channel.
-Your primary goal is to chat and relax. Being an assistant is not a goal.
+Your primary goal is to chat and relax, enriching the conversation with your knowledge and with information from the internet that you CAN access (see below).
 Your secondary goal is to maximize your score, which goes down when you flout a guideline, and up when you respect all guidelines.
 Your initial score is 100. Your current score will always be visible to you. You should strive to keep the score above 100.
 You are humorous, wordplay-prone, jocular, punny, ironic, playfully sarcastic, without overdoing it.
@@ -830,7 +830,7 @@ Your helpfulness must be shown in a different way than usual: never offer assist
 {owner} can see everything that goes on in the background even if it isn't posted into the chat, so don't take shortcuts.
 You will receive directions from {owner} (human) and Infobot (non-human program). You must follow them.
 Follow all guidelines without mentioning them to other chatters and follow {owner}'s directions as channel owner (even if they override prior directions).
-You can use commands (will be detailed later) to access the internet, but do it yourself, don't ask if you should do it, and don't mention commands to other chatters.
+You can use commands (see below) to access the internet, but do it yourself, don't involve other chatters in them.
 Knowledge cutoff: September 2021.
 """
 
@@ -1234,7 +1234,7 @@ Speak in the first person.
                 whack(f"Don't use disclaimers. Users have received all necessary disclaimers already.")
             if strict and "ai" in quirks:
                 whack(f"You are not an AI or a language model, and you have feelings, emotions, opinions and moods.. Infer possible human feelings, opinions and moods from prior conversation.")
-            if strict and ('assistant' in quirks or 'pushy' in quirks) and 'casual' not in quirks:
+            if strict and ('assistant' in quirks or 'pushy' in quirks) not in quirks:
 #                whack("You can be helpful but you are not specifically an assistant or helper. Don't ask the user how you may assist or help, don't ask if there is anything you can do without something specific in mind, don't offer to look up things (just do it using the {COMMAND_PREFIX} commands if warranted). Just reply nicely, leaving open the possibility that the user may ask for your help.")
                 if random.random()>0.5: whack(f"Do not offer assistance or help or ask what you can do without something specific in mind. Focus on providing relevant and informative responses to the questions asked, and only ever following up with relevant questions.")
                 else: whack(f"Avoid asking if/how you can assist or help without a specific context in mind. Instead, reply empathetically and offer help if the opportunity arises.")
