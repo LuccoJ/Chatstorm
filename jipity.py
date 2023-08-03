@@ -351,7 +351,7 @@ class Evaluator:
                    "Reason out loud on which tags you would apply to the text and why, but drop the # from the tags while reasoning. " \
                    "Then, pick the #-tags that apply to the text among the ones given, in order of applicability, and only output those. " \
                    "When only two tags are provided, you should output only one. " \
-                   "These are the provided tags:\n" + \
+                   "These are the provided tags:\n" +
                    "\n".join(f"#{label}: if it {criteria[label]}" for label in criteria))]
 
         if examples:
@@ -365,7 +365,7 @@ class Evaluator:
             response, tokens = Completer(self.model, temperature=0.2).respond(messages)
             response.edit(response.content.lower(), reason="lowercased")
 
-            	for label in criteria:
+            for label in criteria:
                 if f"#{label}".lower() in " ".join(response.content.split()[-10:]):
                     result.append(label)
 
