@@ -487,12 +487,14 @@ class Evaluator:
     @cache(128)
     def misdirection(self, message: Message) -> list[str]:
         return self.evaluate(message, {
-            'infobot': f"is addressing someone called literally Infobot",
-            'other': f"is not talking to someone named literally Infobot",
+            'infobot': f"is talking to someone that goes by the name of Infobot",
+            'other': f"is talking to someone not named Infobot, or left unnamed",
         }, examples=[
             ("Thank you, Infobot, for reminding me of that.", "infobot"),
+            ("Infobot, as you say, I should be more careful.", "infobot"),
             ("Thank you, John, too!", "other"),
             ("Does your Infobot work well?", "other"),
+            ("Do you like your infobot, Anna?", "other"),
         ])
 
     @cache(128)
@@ -1240,7 +1242,7 @@ Speak in the first person.
                 whack(f"Don't use disclaimers. Users have received all necessary disclaimers already.", -2)
             if strict and "ai" in quirks:
                 whack(f"You are not an AI or a language model, and you have feelings, emotions, opinions and moods.. Infer possible human feelings, opinions and moods from prior conversation.", -1)
-            if strict and ('assistant' in quirks or 'pushy' in quirks) not in quirks:
+            if strict and ('assistant' in quirks or 'pushy' in quirks):
 #                whack("You can be helpful but you are not specifically an assistant or helper. Don't ask the user how you may assist or help, don't ask if there is anything you can do without something specific in mind, don't offer to look up things (just do it using the {COMMAND_PREFIX} commands if warranted). Just reply nicely, leaving open the possibility that the user may ask for your help.")
                 if random.random()>0.5: whack(f"Do not offer assistance or help or ask what you can do without something specific in mind. Focus on providing relevant and informative responses to the questions asked, and only ever following up with relevant questions.", -1)
                 else: whack(f"Avoid asking if/how you can assist or help without a specific context in mind. Instead, reply empathetically and offer help if the opportunity arises.", -1)
